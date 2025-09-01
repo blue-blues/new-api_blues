@@ -105,7 +105,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Set environment variables
 ENV GIN_MODE=release \
-    DATA_SOURCE_NAME=/data/one-api.db
+    DATA_SOURCE_NAME=/data/one-api.db \
+    THEME=air
 
 # Run the application
 CMD ["./one-api"]
