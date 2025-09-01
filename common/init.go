@@ -52,10 +52,12 @@ func Init() {
 			log.Fatal(err)
 		}
 		if _, err := os.Stat(*LogDir); os.IsNotExist(err) {
+			log.Printf("Creating log directory: %s", *LogDir)
 			err = os.Mkdir(*LogDir, 0777)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatalf("Failed to create log directory %s: %v", *LogDir, err)
 			}
+			log.Printf("Successfully created log directory: %s", *LogDir)
 		}
 		logger.LogDir = *LogDir
 	}

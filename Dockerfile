@@ -87,8 +87,8 @@ WORKDIR /app
 # Copy binary from builder stage
 COPY --from=backend-builder /app/one-api .
 
-# Change ownership to non-root user
-RUN chown oneapi:oneapi /app/one-api
+# Change ownership of entire /app directory to non-root user
+RUN chown -R oneapi:oneapi /app
 
 # Switch to non-root user
 USER oneapi
