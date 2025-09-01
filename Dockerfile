@@ -1,23 +1,35 @@
 # Multi-stage Dockerfile for one-api
 # Stage 1: Build React frontend
-FROM node:18-alpine AS frontend-builder
+FROM node:18.19-alpine AS frontend-builder
 
 WORKDIR /app/web/air
+
+# Add diagnostic logging for debugging
+RUN echo "=== Frontend Build Stage ===" && \
+    node --version && \
+    npm --version
 
 # Copy package files
 COPY web/air/package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production --silent
+# Install ALL dependencies (including devDependencies needed for build)
+# Using --omit=dev is incorrect here as we need devDependencies for React build
+RUN npm ci && \
+    echo "Dependencies installed successfully"
 
 # Copy frontend source
 COPY web/air ./
 
 # Build frontend and move to correct location
-RUN npm run build
+RUN npm run build && \
+    echo "Frontend build completed successfully"
 
 # Stage 2: Build Go application
 FROM golang:1.21-alpine AS backend-builder
+
+# Add diagnostic logging for debugging
+RUN echo "=== Backend Build Stage ===" && \
+    go version
 
 # Install build dependencies
 RUN apk add --no-cache git gcc musl-dev
@@ -28,7 +40,8 @@ WORKDIR /app
 COPY go.mod go.sum ./
 
 # Download dependencies
-RUN go mod download
+RUN go mod download && \
+    echo "Go dependencies downloaded successfully"
 
 # Copy source code
 COPY . .
@@ -41,16 +54,24 @@ RUN CGO_ENABLED=1 GOOS=linux go build \
     -ldflags='-w -s -extldflags "-static"' \
     -a -installsuffix cgo \
     -o one-api \
-    main.go
+    main.go && \
+    echo "Go application built successfully" && \
+    ls -la one-api
 
 # Stage 3: Final runtime image
 FROM alpine:3.18
+
+# Add diagnostic logging for runtime stage
+RUN echo "=== Runtime Stage ===" && \
+    cat /etc/alpine-release
 
 # Install runtime dependencies
 RUN apk add --no-cache \
     ca-certificates \
     tzdata \
-    && rm -rf /var/cache/apk/*
+    wget \
+    && rm -rf /var/cache/apk/* \
+    && echo "Runtime dependencies installed successfully"
 
 # Create non-root user
 RUN addgroup -g 1001 -S oneapi && \
