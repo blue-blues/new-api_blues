@@ -66,18 +66,38 @@ func CreateRootAccountIfNeed() error {
 
 func chooseDB(envName string) (*gorm.DB, error) {
 	dsn := os.Getenv(envName)
-
-	switch {
-	case strings.HasPrefix(dsn, "postgres://"):
-		// Use PostgreSQL
-		return openPostgreSQL(dsn)
-	case dsn != "":
-		// Use MySQL
-		return openMySQL(dsn)
-	default:
-		// Use SQLite
+	
+	// Diagnostic logging for database configuration debugging
+	logger.SysLog(fmt.Sprintf("Database configuration debug - Environment variable %s value: '%s'", envName, dsn))
+	
+	if dsn == "" {
+		logger.SysLog("No database DSN provided, will use SQLite as fallback")
 		return openSQLite()
 	}
+	
+	// Check for PostgreSQL DSN format
+	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+		logger.SysLog("PostgreSQL DSN detected")
+		return openPostgreSQL(dsn)
+	}
+	
+	// Validate MySQL DSN format - should contain @ and / for proper format
+	// Valid MySQL DSN examples: user:pass@tcp(host:port)/dbname, user:pass@tcp(host)/dbname
+	if strings.Contains(dsn, "@") && (strings.Contains(dsn, "/") || strings.Contains(dsn, "tcp(")) {
+		logger.SysLog("Valid MySQL DSN format detected")
+		return openMySQL(dsn)
+	}
+	
+	// DSN is set but appears to be incomplete/malformed
+	if dsn != "" {
+		logger.SysLog(fmt.Sprintf("DSN appears to be incomplete or malformed (value: '%s'), falling back to SQLite", dsn))
+		logger.SysLog("For MySQL, use format: user:password@tcp(host:port)/database")
+		logger.SysLog("For PostgreSQL, use format: postgres://user:password@host:port/database")
+		return openSQLite()
+	}
+	
+	// Default fallback to SQLite
+	return openSQLite()
 }
 
 func openPostgreSQL(dsn string) (*gorm.DB, error) {
