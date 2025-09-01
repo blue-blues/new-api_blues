@@ -1,0 +1,84 @@
+# Git
+.git
+.gitignore
+.github/
+
+# Documentation
+README.md
+docs/
+pull_request_template.md
+
+# Node modules (will be installed during build)
+web/air/node_modules/
+node_modules/
+
+# Frontend build output (will be generated during build)
+web/air/build/
+web/build/
+
+# Other theme directories (not needed for air theme)
+web/default/
+web/berry/
+
+# Development files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.log
+logs/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+.npm/
+.yarn/
+
+# Coverage reports
+coverage/
+*.cover
+*.coverprofile
+
+# Binaries
+bin/
+dist/
+build/
+
+# Docker files (avoid recursive copies)
+Dockerfile*
+docker-compose*.yml
+.dockerignore

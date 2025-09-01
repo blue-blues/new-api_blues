@@ -1,0 +1,146 @@
+version: '3.8'
+
+services:
+  one-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: one-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - one_api_data:/data
+    environment:
+      # Basic configuration
+      - GIN_MODE=release
+      - DATA_SOURCE_NAME=/data/one-api.db
+      - SESSION_SECRET=${SESSION_SECRET:-your-session-secret-change-me}
+      
+      # Server configuration
+      - PORT=3000
+      - SERVER_ADDRESS=http://localhost:3000
+      
+      # Theme configuration
+      - THEME=air
+      
+      # Cache configuration
+      - MEMORY_CACHE_ENABLED=true
+      - SYNC_FREQUENCY=600
+      
+      # Redis configuration (optional, uncomment if using Redis)
+      # - REDIS_CONN_STRING=redis://redis:6379
+      
+      # Database configuration (for MySQL/PostgreSQL, uncomment as needed)
+      # - SQL_DSN=mysql://username:password@mysql:3306/oneapi
+      # - SQL_DSN=postgres://username:password@postgres:5432/oneapi?sslmode=disable
+      
+      # Rate limiting
+      - GLOBAL_API_RATE_LIMIT=480
+      - GLOBAL_WEB_RATE_LIMIT=240
+      
+      # Initial setup (optional)
+      # - INITIAL_ROOT_TOKEN=your-initial-root-token
+      # - INITIAL_ROOT_ACCESS_TOKEN=your-initial-access-token
+      
+      # Debug (set to true for development)
+      - DEBUG=false
+      - DEBUG_SQL=false
+      
+      # Batch updates
+      - BATCH_UPDATE_ENABLED=true
+      - BATCH_UPDATE_INTERVAL=5
+      
+      # Channel testing
+      # - CHANNEL_TEST_FREQUENCY=3600
+      
+      # Metrics
+      - ENABLE_METRIC=true
+      
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      - redis
+      # - mysql
+      # - postgres
+    networks:
+      - one-api-network
+
+  # Redis service (optional but recommended for caching)
+  redis:
+    image: redis:7-alpine
+    container_name: one-api-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis-password-change-me}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - one-api-network
+
+  # MySQL service (optional, uncomment if using MySQL)
+  # mysql:
+  #   image: mysql:8.0
+  #   container_name: one-api-mysql
+  #   restart: unless-stopped
+  #   environment:
+  #     - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root-password-change-me}
+  #     - MYSQL_DATABASE=oneapi
+  #     - MYSQL_USER=${MYSQL_USER:-oneapi}
+  #     - MYSQL_PASSWORD=${MYSQL_PASSWORD:-mysql-password-change-me}
+  #   volumes:
+  #     - mysql_data:/var/lib/mysql
+  #   ports:
+  #     - "3306:3306"
+  #   healthcheck:
+  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   networks:
+  #     - one-api-network
+
+  # PostgreSQL service (optional, uncomment if using PostgreSQL)
+  # postgres:
+  #   image: postgres:15-alpine
+  #   container_name: one-api-postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     - POSTGRES_DB=oneapi
+  #     - POSTGRES_USER=${POSTGRES_USER:-oneapi}
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres-password-change-me}
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-oneapi}"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #   networks:
+  #     - one-api-network
+
+volumes:
+  one_api_data:
+    driver: local
+  redis_data:
+    driver: local
+  # mysql_data:
+  #   driver: local
+  # postgres_data:
+  #   driver: local
+
+networks:
+  one-api-network:
+    driver: bridge
