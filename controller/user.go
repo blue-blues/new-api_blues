@@ -108,6 +108,27 @@ func SetupLogin(user *model.User, c *gin.Context) {
 		})
 		return
 	}
+
+	// Check for VSCode authentication session
+	source := c.Query("source")
+	sessionID := c.Query("session_id")
+	
+	if source == "vscode" && sessionID != "" {
+		// Handle VSCode authentication completion
+		if err := completeVSCodeAuth(user, sessionID); err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": "Failed to complete VSCode authentication",
+			})
+			return
+		}
+
+		// Redirect to VSCode success page instead of standard response
+		c.Redirect(http.StatusFound, "/vscode/auth/success")
+		return
+	}
+
+	// Standard response for non-VSCode authentications
 	cleanUser := model.User{
 		Id:          user.Id,
 		Username:    user.Username,
@@ -120,6 +141,32 @@ func SetupLogin(user *model.User, c *gin.Context) {
 		"success": true,
 		"data":    cleanUser,
 	})
+}
+
+// completeVSCodeAuth completes the VSCode authentication process
+func completeVSCodeAuth(user *model.User, sessionID string) error {
+	// Get authentication session
+	authSession, err := model.GetVSCodeAuthSession(sessionID)
+	if err != nil {
+		return fmt.Errorf("failed to get VSCode auth session: %v", err)
+	}
+
+	// Get or create user's default API token
+	token, err := model.GetOrCreateUserDefaultToken(user.Id, "VSCode Integration")
+	if err != nil {
+		return fmt.Errorf("failed to get user default token: %v", err)
+	}
+
+	// Update session with token information
+	authSession.Status = "completed"
+	authSession.APIToken = token.Key
+	authSession.TokenName = token.Name
+	authSession.UserID = user.Id
+	authSession.Username = user.Username
+	authSession.DisplayName = user.DisplayName
+
+	// Store updated session
+	return model.StoreVSCodeAuthSession(authSession)
 }
 
 func Logout(c *gin.Context) {

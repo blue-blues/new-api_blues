@@ -22,6 +22,10 @@ const LoginForm = () => {
   let navigate = useNavigate();
   const [status, setStatus] = useState({});
   const logo = getLogo();
+  
+  // Extract source parameter to detect VSCode integration
+  const source = searchParams.get('source');
+  const isVSCodeLogin = source === 'vscode';
 
   useEffect(() => {
     if (searchParams.get('expired')) {
@@ -32,7 +36,19 @@ const LoginForm = () => {
       status = JSON.parse(status);
       setStatus(status);
     }
-  }, []);
+    
+    // Check if user is already authenticated for VSCode login
+    if (userState.user && isVSCodeLogin) {
+      const sessionId = searchParams.get('session_id');
+      if (sessionId) {
+        // If session_id exists, navigate to VSCode success page to complete authentication
+        navigate('/vscode/success');
+      } else {
+        // If no session_id, navigate to tokens page for authenticated user
+        navigate('/token');
+      }
+    }
+  }, [userState.user, isVSCodeLogin, searchParams, navigate]);
 
 
   function handleChange(name, value) {
@@ -42,8 +58,6 @@ const LoginForm = () => {
   async function handleSubmit(e) {
     setSubmitted(true);
     if (username && password) {
-      // Extract source parameter from URL
-      const source = searchParams.get('source');
       const res = await API.post(`/api/user/login${source ? `?source=${source}` : ''}`, {
         username,
         password
@@ -52,18 +66,21 @@ const LoginForm = () => {
       if (success) {
         userDispatch({ type: 'login', payload: data });
         localStorage.setItem('user', JSON.stringify(data));
-        showSuccess('Login successful!');
+        
         if (username === 'root' && password === '123456') {
           Modal.error({ title: 'You are using the default password!', content: 'Please change the default password immediately!', centered: true });
         }
         
         // VSCode-specific handling
-        if (source === 'vscode') {
-          // VSCode-specific success handling - could add custom messaging or behavior
-          showInfo('VSCode integration login successful!');
+        if (isVSCodeLogin) {
+          showSuccess('VSCode integration login successful! You can now use One API in your VSCode editor.');
+          // For VSCode integration, we might want to redirect to a success page
+          // or handle the authentication completion differently
+          navigate('/vscode/success');
+        } else {
+          showSuccess('Login successful!');
+          navigate('/token');
         }
-        
-        navigate('/token');
       } else {
         showError(message);
       }
@@ -103,8 +120,15 @@ const LoginForm = () => {
             <div style={{ width: 500 }}>
               <Card>
                 <Title heading={2} style={{ textAlign: 'center' }}>
-                  User Login
+                  {isVSCodeLogin ? 'VSCode Integration Login' : 'User Login'}
                 </Title>
+                {isVSCodeLogin && (
+                  <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                    <Text type="secondary">
+                      Please log in to connect your VSCode editor with One API
+                    </Text>
+                  </div>
+                )}
                 <Form>
                   <Form.Input
                     field={'username'}

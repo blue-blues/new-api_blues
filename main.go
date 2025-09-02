@@ -94,6 +94,9 @@ func main() {
 	openai.InitTokenEncoders()
 	client.Init()
 
+	// Initialize VSCode session cleanup routine
+	model.StartVSCodeSessionCleanupRoutine()
+
 	// Initialize i18n
 	if err := i18n.Init(); err != nil {
 		logger.FatalLog("failed to initialize i18n: " + err.Error())

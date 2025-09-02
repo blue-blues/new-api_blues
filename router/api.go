@@ -29,6 +29,17 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/oauth/email/bind", middleware.CriticalRateLimit(), middleware.UserAuth(), controller.EmailBind)
 		apiRouter.POST("/topup", middleware.AdminAuth(), controller.AdminTopUp)
 
+		// VSCode authentication routes
+		vscodeRoute := apiRouter.Group("/vscode")
+		{
+			vscodeAuthRoute := vscodeRoute.Group("/auth")
+			vscodeAuthRoute.Use(middleware.CriticalRateLimit())
+			{
+				vscodeAuthRoute.POST("/init", controller.InitVSCodeAuth)
+				vscodeAuthRoute.GET("/status/:session_id", controller.GetVSCodeAuthStatus)
+			}
+		}
+
 		userRoute := apiRouter.Group("/user")
 		{
 			userRoute.POST("/register", middleware.CriticalRateLimit(), controller.Register)

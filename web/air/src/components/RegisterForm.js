@@ -22,6 +22,7 @@ const RegisterForm = () => {
   
   // Extract source parameter from URL
   const source = new URLSearchParams(window.location.search).get('source');
+  const isVSCodeRegistration = source === 'vscode';
 
   useEffect(() => {
     let status = localStorage.getItem('status');
@@ -61,13 +62,14 @@ const RegisterForm = () => {
       const { success, message } = res.data;
       if (success) {
         // VSCode-specific handling
-        if (source === 'vscode') {
-          // VSCode-specific success handling - could add custom messaging or behavior
-          showSuccess('VSCode integration registration successful!');
+        if (isVSCodeRegistration) {
+          showSuccess('VSCode integration registration successful! Please log in to complete the setup.');
+          // For VSCode registration, redirect to login with source parameter
+          navigate(`/login?source=vscode`);
         } else {
           showSuccess('Registration successful!');
+          navigate('/login');
         }
-        navigate('/login');
       } else {
         showError(message);
       }
@@ -94,8 +96,16 @@ const RegisterForm = () => {
     <Grid textAlign="center" style={{ marginTop: '48px' }}>
       <Grid.Column style={{ maxWidth: 450 }}>
         <Header as="h2" color="" textAlign="center">
-          <Image src={logo} /> New User Registration
+          <Image src={logo} />
+          {isVSCodeRegistration ? 'VSCode Integration Registration' : 'New User Registration'}
         </Header>
+        {isVSCodeRegistration && (
+          <div style={{ textAlign: 'center', marginBottom: 16 }}>
+            <p style={{ color: '#666', fontSize: '14px' }}>
+              Create an account to connect your VSCode editor with One API
+            </p>
+          </div>
+        )}
         <Form size="large">
           <Segment>
             <Form.Input
