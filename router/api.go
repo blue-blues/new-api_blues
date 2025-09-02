@@ -37,6 +37,9 @@ func SetApiRouter(router *gin.Engine) {
 			{
 				vscodeAuthRoute.POST("/init", controller.InitVSCodeAuth)
 				vscodeAuthRoute.GET("/status/:session_id", controller.GetVSCodeAuthStatus)
+				// Coder integration routes
+				vscodeAuthRoute.POST("/coder/init", controller.InitCoderAuth)
+				vscodeAuthRoute.GET("/coder/callback", controller.CoderAuthCallback)
 			}
 		}
 

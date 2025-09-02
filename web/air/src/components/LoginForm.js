@@ -110,6 +110,63 @@ const LoginForm = () => {
     }
   };
 
+  // Handle Coder authentication
+  const handleCoderAuth = async (coderUrl) => {
+    try {
+      const res = await API.post('/api/vscode/auth/coder/init', {
+        client_name: 'VSCode Extension',
+        version: '1.0.0',
+        coder_url: coderUrl,
+        provider: 'github'  // Default to GitHub, could be made configurable
+      });
+
+      const { success, message, data } = res.data;
+      if (success) {
+        showInfo('Redirecting to Coder authentication...');
+        // Open Coder auth URL in new window
+        window.open(data.auth_url, '_blank');
+        
+        // Start polling for authentication completion
+        pollCoderAuthStatus(data.session_id);
+      } else {
+        showError(message);
+      }
+    } catch (error) {
+      showError('Failed to initialize Coder authentication: ' + error.message);
+    }
+  };
+
+  // Poll for Coder authentication completion
+  const pollCoderAuthStatus = async (sessionId) => {
+    const maxAttempts = 150; // 5 minutes with 2-second intervals
+    let attempts = 0;
+
+    const poll = async () => {
+      try {
+        const res = await API.get(`/api/vscode/auth/status/${sessionId}`);
+        const { success, data } = res.data;
+
+        if (success && data.status === 'completed') {
+          showSuccess('Coder authentication successful!');
+          // The user is now authenticated, redirect to success page
+          navigate('/vscode/success');
+          return;
+        }
+
+        if (data.status === 'pending' && attempts < maxAttempts) {
+          attempts++;
+          setTimeout(poll, 2000); // Poll every 2 seconds
+        } else if (attempts >= maxAttempts) {
+          showError('Authentication timeout. Please try again.');
+        }
+      } catch (error) {
+        showError('Authentication failed: ' + error.message);
+      }
+    };
+
+    poll();
+  };
+
   return (
     <div>
       <Layout>
@@ -159,6 +216,31 @@ const LoginForm = () => {
                     Forgot password? <Link to="/reset">Reset here</Link>
                   </Text>
                 </div>
+                
+                {/* VSCode Coder Integration Option */}
+                {isVSCodeLogin && (
+                  <>
+                    <Divider margin="12px" align="center">
+                      Or authenticate with Coder
+                    </Divider>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
+                      <Button
+                        type="secondary"
+                        size="large"
+                        style={{ width: '100%' }}
+                        onClick={() => {
+                          const coderUrl = prompt('Enter your Coder deployment URL (e.g., https://coder.bluesminds.com):');
+                          if (coderUrl) {
+                            handleCoderAuth(coderUrl);
+                          }
+                        }}
+                      >
+                        Sign in with Coder
+                      </Button>
+                    </div>
+                  </>
+                )}
+
                 {status.github_oauth || status.telegram_oauth ? (
                   <>
                     <Divider margin="12px" align="center">

@@ -14,6 +14,8 @@ import (
 type VSCodeAuthInitRequest struct {
 	ClientName string `json:"client_name"`
 	Version    string `json:"version"`
+	Provider   string `json:"provider,omitempty"`   // "local", "coder", etc.
+	CoderURL   string `json:"coder_url,omitempty"`  // Required if provider is "coder"
 }
 
 // InitVSCodeAuth initializes a VSCode authentication session
@@ -35,6 +37,36 @@ func InitVSCodeAuth(c *gin.Context) {
 		req.Version = "1.0.0"
 	}
 
+	// Default to local provider if not specified
+	if req.Provider == "" {
+		req.Provider = "local"
+	}
+
+	// Handle external provider (Coder)
+	if req.Provider == "coder" {
+		if req.CoderURL == "" {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": "Coder URL is required for Coder provider",
+			})
+			return
+		}
+		
+		// Delegate to Coder auth handler
+		c.Set("coder_url", req.CoderURL)
+		InitCoderAuth(c)
+		return
+	}
+
+	// Handle local provider (existing flow)
+	if req.Provider != "local" {
+		c.JSON(http.StatusOK, gin.H{
+			"success": false,
+			"message": "Unsupported provider: " + req.Provider,
+		})
+		return
+	}
+
 	// Generate unique session ID
 	sessionID := model.GenerateVSCodeSessionID()
 	
@@ -44,6 +76,7 @@ func InitVSCodeAuth(c *gin.Context) {
 		Status:      "pending",
 		ClientName:  req.ClientName,
 		Version:     req.Version,
+		Provider:    "local",
 		CreatedTime: time.Now().Unix(),
 		ExpiresAt:   time.Now().Add(10 * time.Minute).Unix(),
 	}

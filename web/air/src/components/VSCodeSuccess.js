@@ -18,6 +18,7 @@ const VSCodeSuccess = () => {
   const token = searchParams.get('token');
   const username = searchParams.get('username');
   const sessionId = searchParams.get('session_id');
+  const provider = searchParams.get('provider') || 'local';
 
   useEffect(() => {
     // Auto-close functionality - close window after 10 seconds
@@ -74,14 +75,30 @@ const VSCodeSuccess = () => {
                     style={{ color: '#52c41a', fontSize: '64px', marginBottom: 16 }}
                   />
                   <Title heading={2} style={{ color: '#52c41a', margin: 0 }}>
-                    VSCode Integration Successful!
+                    {provider === 'coder' ? 'Coder Integration Successful!' : 'VSCode Integration Successful!'}
                   </Title>
                 </div>
 
                 <Space vertical align="start" style={{ width: '100%' }}>
                   <Text type="secondary" size="large">
-                    Your VSCode extension has been successfully authenticated with One API.
+                    {provider === 'coder'
+                      ? 'Your VSCode extension has been successfully authenticated with One API via Coder.'
+                      : 'Your VSCode extension has been successfully authenticated with One API.'}
                   </Text>
+
+                  {provider === 'coder' && (
+                    <div style={{
+                      padding: 12,
+                      backgroundColor: '#e6f7ff',
+                      borderRadius: 6,
+                      border: '1px solid #91d5ff'
+                    }}>
+                      <Text type="secondary" size="small">
+                        <strong>🚀 Coder Integration:</strong> You've successfully authenticated through your Coder deployment.
+                        Your VSCode extension can now access One API services seamlessly within your cloud development environment.
+                      </Text>
+                    </div>
+                  )}
 
                   {username && (
                     <div>
@@ -168,9 +185,9 @@ const VSCodeSuccess = () => {
                     </Button>
                   </div>
 
-                  <div style={{ 
-                    marginTop: 24, 
-                    padding: 16, 
+                  <div style={{
+                    marginTop: 24,
+                    padding: 16,
                     backgroundColor: '#f0f9ff',
                     borderRadius: 6,
                     border: '1px solid #bae6fd'
@@ -179,10 +196,22 @@ const VSCodeSuccess = () => {
                       <strong>Next Steps:</strong>
                       <br />
                       • Your VSCode extension is now connected to One API
+                      {provider === 'coder' && (
+                        <>
+                          <br />
+                          • Your Coder workspace has access to One API services
+                        </>
+                      )}
                       <br />
                       • You can start using AI features directly in your VSCode editor
                       <br />
                       • Manage your API tokens and usage in the dashboard
+                      {provider === 'coder' && (
+                        <>
+                          <br />
+                          • All team members in your Coder deployment can now use the integrated API
+                        </>
+                      )}
                     </Text>
                   </div>
                 </Space>
