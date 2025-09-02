@@ -155,6 +155,14 @@ function App() {
             }
           />
           <Route
+            path="/users/sign_up"
+            element={
+              <Suspense fallback={<Loading></Loading>}>
+                <RegisterForm />
+              </Suspense>
+            }
+          />
+          <Route
             path="/reset"
             element={
               <Suspense fallback={<Loading></Loading>}>

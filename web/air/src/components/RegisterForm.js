@@ -19,6 +19,9 @@ const RegisterForm = () => {
   if (affCode) {
     localStorage.setItem('aff', affCode);
   }
+  
+  // Extract source parameter from URL
+  const source = new URLSearchParams(window.location.search).get('source');
 
   useEffect(() => {
     let status = localStorage.getItem('status');
@@ -52,13 +55,19 @@ const RegisterForm = () => {
       }
       inputs.aff_code = affCode;
       const res = await API.post(
-        `/api/user/register`,
+        `/api/user/register${source ? `?source=${source}` : ''}`,
         inputs
       );
       const { success, message } = res.data;
       if (success) {
+        // VSCode-specific handling
+        if (source === 'vscode') {
+          // VSCode-specific success handling - could add custom messaging or behavior
+          showSuccess('VSCode integration registration successful!');
+        } else {
+          showSuccess('Registration successful!');
+        }
         navigate('/login');
-        showSuccess('Registration successful!');
       } else {
         showError(message);
       }

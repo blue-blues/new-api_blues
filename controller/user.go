@@ -31,6 +31,28 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
+	
+	// Extract and validate source parameter
+	source := c.Query("source")
+	if source != "" {
+		// Validate source parameter to prevent injection attacks
+		validSources := []string{"vscode", "web", "mobile", "api"}
+		isValidSource := false
+		for _, validSource := range validSources {
+			if source == validSource {
+				isValidSource = true
+				break
+			}
+		}
+		if !isValidSource {
+			c.JSON(http.StatusOK, gin.H{
+				"message": i18n.Translate(c, "invalid_parameter"),
+				"success": false,
+			})
+			return
+		}
+	}
+	
 	var loginRequest LoginRequest
 	err := json.NewDecoder(c.Request.Body).Decode(&loginRequest)
 	if err != nil {
@@ -61,6 +83,13 @@ func Login(c *gin.Context) {
 		})
 		return
 	}
+	
+	// Log VSCode source usage for tracking
+	if source == "vscode" {
+		// Add logging for VSCode users - could be expanded to database logging
+		fmt.Printf("VSCode user login: %s\n", username)
+	}
+	
 	SetupLogin(&user, c)
 }
 
@@ -126,6 +155,28 @@ func Register(c *gin.Context) {
 		})
 		return
 	}
+	
+	// Extract and validate source parameter
+	source := c.Query("source")
+	if source != "" {
+		// Validate source parameter to prevent injection attacks
+		validSources := []string{"vscode", "web", "mobile", "api"}
+		isValidSource := false
+		for _, validSource := range validSources {
+			if source == validSource {
+				isValidSource = true
+				break
+			}
+		}
+		if !isValidSource {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": i18n.Translate(c, "invalid_parameter"),
+			})
+			return
+		}
+	}
+	
 	var user model.User
 	err := json.NewDecoder(c.Request.Body).Decode(&user)
 	if err != nil {
@@ -169,6 +220,13 @@ func Register(c *gin.Context) {
 	if config.EmailVerificationEnabled {
 		cleanUser.Email = user.Email
 	}
+	
+	// Log VSCode source usage for tracking
+	if source == "vscode" {
+		// Add logging for VSCode users - could be expanded to database logging
+		fmt.Printf("VSCode user registration: %s\n", user.Username)
+	}
+	
 	if err := cleanUser.Insert(ctx, inviterId); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"success": false,

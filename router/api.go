@@ -34,6 +34,8 @@ func SetApiRouter(router *gin.Engine) {
 			userRoute.POST("/register", middleware.CriticalRateLimit(), controller.Register)
 			userRoute.POST("/login", middleware.CriticalRateLimit(), controller.Login)
 			userRoute.GET("/logout", controller.Logout)
+			// Add alias route for VSCode compatibility
+			userRoute.POST("/sign_up", middleware.CriticalRateLimit(), controller.Register)
 
 			selfRoute := userRoute.Group("/")
 			selfRoute.Use(middleware.UserAuth())

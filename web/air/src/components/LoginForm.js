@@ -42,7 +42,9 @@ const LoginForm = () => {
   async function handleSubmit(e) {
     setSubmitted(true);
     if (username && password) {
-      const res = await API.post(`/api/user/login`, {
+      // Extract source parameter from URL
+      const source = searchParams.get('source');
+      const res = await API.post(`/api/user/login${source ? `?source=${source}` : ''}`, {
         username,
         password
       });
@@ -54,6 +56,13 @@ const LoginForm = () => {
         if (username === 'root' && password === '123456') {
           Modal.error({ title: 'You are using the default password!', content: 'Please change the default password immediately!', centered: true });
         }
+        
+        // VSCode-specific handling
+        if (source === 'vscode') {
+          // VSCode-specific success handling - could add custom messaging or behavior
+          showInfo('VSCode integration login successful!');
+        }
+        
         navigate('/token');
       } else {
         showError(message);
